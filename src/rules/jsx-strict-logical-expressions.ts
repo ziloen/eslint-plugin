@@ -3,8 +3,9 @@
  */
 
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils'
+import { isTypeFlagSet, unionTypeParts } from "tsutils"
 import { TypeFlags } from 'typescript'
-import { getConstrainedTypeAtLocation, isTypeFlagSet, unionTypeParts } from '../tsutils'
+import { getConstrainedTypeAtLocation } from '../tsutils'
 import { createEslintRule } from '../utils'
 
 type Options = [
@@ -112,7 +113,7 @@ const jsxStrictLogicalExpressions = createEslintRule<Options, MessageIds>({
       if (
         nodeToEvaluate.type === TSESTree.AST_NODE_TYPES.MemberExpression &&
         nodeToEvaluate.property.type !==
-          TSESTree.AST_NODE_TYPES.PrivateIdentifier
+        TSESTree.AST_NODE_TYPES.PrivateIdentifier
       ) {
         nodeToEvaluate = nodeToEvaluate.property
       }
