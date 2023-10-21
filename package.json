@@ -2,6 +2,9 @@
   "name": "eslint-plugin-ziloen",
   "version": "0.1.0",
   "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rimraf dist && tsup src/index.ts --format esm,cjs --clean",
     "release": "pnpm run build && bumpp --commit --no-push && npm publish"
