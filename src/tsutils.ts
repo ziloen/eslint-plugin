@@ -1,4 +1,24 @@
-import type { Node, Type, TypeChecker } from 'typescript'
+import type { Node, Type, TypeChecker, UnionType } from 'typescript'
+import * as ts from "typescript"
+
+
+export function isUnionType(type: Type): type is UnionType {
+  return (type.flags & ts.TypeFlags.Union) !== 0
+}
+
+/** Returns all types of a union type or an array containing `type` itself if it's no union type. */
+export function unionTypeParts(type: Type): Type[] {
+  return isUnionType(type) ? type.types : [type]
+}
+
+
+function isFlagSet(obj: { flags: number }, flag: number) {
+  return (obj.flags & flag) !== 0
+}
+
+export const isTypeFlagSet: (type: Type, flag: ts.TypeFlags) => boolean = isFlagSet
+
+
 
 /**
  * Resolves the given node's type. Will resolve to the type's generic constraint, if it has one.

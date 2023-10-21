@@ -3,9 +3,8 @@
  */
 
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils'
-import { isTypeFlagSet, unionTypeParts } from "tsutils"
-import { TypeFlags } from 'typescript'
-import { getConstrainedTypeAtLocation } from '../tsutils'
+import * as ts from 'typescript'
+import { getConstrainedTypeAtLocation, isTypeFlagSet, unionTypeParts } from '../tsutils'
 import { createEslintRule } from '../utils'
 
 type Options = [
@@ -65,7 +64,7 @@ const jsxStrictLogicalExpressions = createEslintRule<Options, MessageIds>({
 
       const hasPotentiallyFalseyString = types.some(
         type =>
-          isTypeFlagSet(type, TypeFlags.StringLike) &&
+          isTypeFlagSet(type, ts.TypeFlags.StringLike) &&
           (!type.isStringLiteral() || type.value === '')
       )
 
@@ -77,7 +76,7 @@ const jsxStrictLogicalExpressions = createEslintRule<Options, MessageIds>({
         type =>
           isTypeFlagSet(
             type,
-            TypeFlags.NumberLike | TypeFlags.BigIntLike
+            ts.TypeFlags.NumberLike | ts.TypeFlags.BigIntLike
           ) &&
           (!type.isNumberLiteral() || type.value === 0)
       )
