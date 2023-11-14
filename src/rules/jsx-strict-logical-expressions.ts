@@ -3,7 +3,7 @@
  */
 
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils'
-import * as ts from 'typescript'
+import ts from 'typescript'
 import { getConstrainedTypeAtLocation, isTypeFlagSet, unionTypeParts } from '../tsutils'
 import { createEslintRule } from '../utils'
 

@@ -1,5 +1,5 @@
 import type { Node, Type, TypeChecker, UnionType } from 'typescript'
-import * as ts from "typescript"
+import ts from "typescript"
 
 
 export function isUnionType(type: Type): type is UnionType {
