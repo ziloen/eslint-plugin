@@ -1,5 +1,5 @@
 /**
- * Copied from https://github.com/hluisson/eslint-plugin-jsx-expressions
+ * https://github.com/hluisson/eslint-plugin-jsx-expressions
  */
 
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils'
