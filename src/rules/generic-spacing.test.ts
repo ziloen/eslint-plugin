@@ -24,7 +24,8 @@ T, K
 > = Record< T, K >`, `type Foo<
 T, K
 > = Record<T, K>`, 2],
-  [`type Foo<T=any, K=any> = T`, `type Foo<T = any, K = any> = T`, 2]
+  [`type Foo<T=any, K=any> = T`, `type Foo<T = any, K = any> = T`, 2],
+  [`type Foo<T extends Record< (string & {}) | "a", (any) >> = T`, `type Foo<T extends Record<(string & {}) | "a", (any)>> = T`, 2]
 ] as const
 
 run({

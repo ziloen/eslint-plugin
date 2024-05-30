@@ -25,7 +25,9 @@ function removeSpaceAround(
   const startNode = params[0]
   const endNode = params.at(-1)!
 
+  // text between "<" and first param
   const textBeforeFirst = sourceCode.text.slice(start, startNode.range[0])
+  // text between last param and ">"
   const textAfterLast = sourceCode.text.slice(endNode.range[1], end)
 
   // if same line, remove spaces
@@ -34,14 +36,14 @@ function removeSpaceAround(
     textBeforeFirst.length &&
     // no new line
     !textBeforeFirst.includes('\n') &&
-    // all spaces
-    /^\s*$/.test(textBeforeFirst)
+    // has space
+    /\s/.test(textBeforeFirst)
   ) {
     context.report({
       node,
       messageId,
       *fix(fixer) {
-        yield fixer.replaceTextRange([start, startNode.range[0]], '')
+        yield fixer.replaceTextRange([start, startNode.range[0]], textBeforeFirst.replaceAll(/\s+/g, ""))
       },
       loc: {
         start: {
@@ -54,12 +56,19 @@ function removeSpaceAround(
   }
 
   // if same line, remove spaces
-  if (textAfterLast.length && !textAfterLast.includes('\n')) {
+  if (
+    // has text after last node
+    textAfterLast.length &&
+    // no new line
+    !textAfterLast.includes('\n') &&
+    // has space
+    /\s/.test(textAfterLast)
+  ) {
     context.report({
       node,
       messageId,
       *fix(fixer) {
-        yield fixer.replaceTextRange([endNode.range[1], end], '')
+        yield fixer.replaceTextRange([endNode.range[1], end], textAfterLast.replaceAll(/\s+/g, ""))
       },
       loc: {
         start: endNode.loc.end,
