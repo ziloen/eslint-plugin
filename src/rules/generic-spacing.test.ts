@@ -1,4 +1,4 @@
-import { RuleTester } from '@typescript-eslint/rule-tester'
+import { run } from './_test'
 import rule, { RULE_NAME, messageId } from './generic-spacing'
 
 const valid = [
@@ -11,7 +11,8 @@ const valid = [
   `type Foo<T, K> = Record<
   T,
   K
->`
+>`,
+  `type Foo<T extends Record<(string & {}) | "a">> = T`
 ]
 
 const invalid = [
@@ -26,11 +27,9 @@ T, K
   [`type Foo<T=any, K=any> = T`, `type Foo<T = any, K = any> = T`, 2]
 ] as const
 
-const ruleTester: RuleTester = new RuleTester({
-  parser: require.resolve('@typescript-eslint/parser')
-})
-
-ruleTester.run(RULE_NAME, rule, {
+run({
+  name: RULE_NAME,
+  rule,
   valid,
   invalid: invalid.map(i => ({
     code: i[0],

@@ -9,6 +9,7 @@ export type Options = []
 
 export const messageId = 'genericSpacingMismatch'
 
+
 function removeSpaceAround(
   node: TSESTree.TSTypeParameterInstantiation | TSESTree.TSTypeParameterDeclaration,
   context: Readonly<RuleContext<MessageIds, []>>
@@ -28,7 +29,14 @@ function removeSpaceAround(
   const textAfterLast = sourceCode.text.slice(endNode.range[1], end)
 
   // if same line, remove spaces
-  if (textBeforeFirst.length && !textBeforeFirst.includes('\n')) {
+  if (
+    // has text before first node
+    textBeforeFirst.length &&
+    // no new line
+    !textBeforeFirst.includes('\n') &&
+    // all spaces
+    /^\s*$/.test(textBeforeFirst)
+  ) {
     context.report({
       node,
       messageId,
