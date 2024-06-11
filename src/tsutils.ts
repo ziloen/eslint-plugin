@@ -11,14 +11,9 @@ export function unionTypeParts(type: Type): Type[] {
   return isUnionType(type) ? type.types : [type]
 }
 
-
-function isFlagSet(obj: { flags: number }, flag: number) {
-  return (obj.flags & flag) !== 0
+export function isTypeFlagSet(type: Type, flag: ts.TypeFlags): boolean {
+  return (type.flags & flag) !== 0
 }
-
-export const isTypeFlagSet: (type: Type, flag: ts.TypeFlags) => boolean = isFlagSet
-
-
 
 /**
  * Resolves the given node's type. Will resolve to the type's generic constraint, if it has one.
