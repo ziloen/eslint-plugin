@@ -12,7 +12,8 @@ const valid = [
   T,
   K
 >`,
-  `type Foo<T extends Record<(string & {}) | "a">> = T`
+  `type Foo<T extends Record<(string & {}) | "a">> = T`,
+  `type Foo<T extends (string | boolean) = (string | boolean)> = T`
 ]
 
 const invalid = [
@@ -25,7 +26,8 @@ T, K
 T, K
 > = Record<T, K>`, 2],
   [`type Foo<T=any, K=any> = T`, `type Foo<T = any, K = any> = T`, 2],
-  [`type Foo<T extends Record< (string & {}) | "a", (any) >> = T`, `type Foo<T extends Record<(string & {}) | "a", (any)>> = T`, 2]
+  [`type Foo<T extends Record< (string & {}) | "a", (any) >> = T`, `type Foo<T extends Record<(string & {}) | "a", (any)>> = T`, 2],
+  [`type Foo<T extends (boolean)=(boolean)> = T`, `type Foo<T extends (boolean) = (boolean)> = T`, 1],
 ] as const
 
 run({

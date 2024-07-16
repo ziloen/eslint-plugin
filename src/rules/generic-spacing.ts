@@ -43,7 +43,10 @@ function removeSpaceAround(
       node,
       messageId,
       *fix(fixer) {
-        yield fixer.replaceTextRange([start, startNode.range[0]], textBeforeFirst.replaceAll(/\s+/g, ""))
+        yield fixer.replaceTextRange(
+          [start, startNode.range[0]],
+          textBeforeFirst.replaceAll(/\s+/g, "")
+        )
       },
       loc: {
         start: {
@@ -68,7 +71,10 @@ function removeSpaceAround(
       node,
       messageId,
       *fix(fixer) {
-        yield fixer.replaceTextRange([endNode.range[1], end], textAfterLast.replaceAll(/\s+/g, ""))
+        yield fixer.replaceTextRange(
+          [endNode.range[1], end],
+          textAfterLast.replaceAll(/\s+/g, "")
+        )
       },
       loc: {
         start: endNode.loc.end,
@@ -113,13 +119,15 @@ const genericSpacing = createEslintRule<Options, MessageIds>({
         const start = startNode.range[1]
         const end = endNode.range[0]
 
+        const text = sourceCode.text.slice(start, end)
+
         // replace all content between name and default with " = "
-        if (sourceCode.text.slice(start, end) !== ' = ') {
+        if (!/(?:^|[^ ]) = (?:$|[^ ])/.test(text)) {
           context.report({
             node,
             messageId,
             *fix(fixer) {
-              yield fixer.replaceTextRange([start, end], ' = ')
+              yield fixer.replaceTextRange([start, end], text.replace(/\s*=\s*/, " = "))
             },
             loc: {
               start: startNode.loc.end,
