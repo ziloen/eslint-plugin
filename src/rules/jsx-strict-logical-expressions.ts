@@ -28,7 +28,6 @@ const jsxStrictLogicalExpressions = createEslintRule<Options, MessageIds>({
   meta: {
     docs: {
       description: 'Forbid non-boolean falsey values in inline expressions',
-      recommended: 'strict',
     },
     fixable: 'code',
     type: 'problem',

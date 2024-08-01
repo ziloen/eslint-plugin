@@ -93,7 +93,6 @@ const genericSpacing = createEslintRule<Options, MessageIds>({
     type: 'layout',
     docs: {
       description: '',
-      recommended: 'stylistic',
     },
     fixable: 'code',
     schema: [],
