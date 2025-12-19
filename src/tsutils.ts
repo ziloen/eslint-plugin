@@ -1,9 +1,9 @@
-import type { Node, Type, TypeChecker, UnionType } from 'typescript'
-import ts from "typescript"
+import type { Node, Type, TypeChecker, TypeFlags, UnionType } from 'typescript'
 
 
 export function isUnionType(type: Type): type is UnionType {
-  return (type.flags & ts.TypeFlags.Union) !== 0
+  // 1048576: TypeFlags.Union
+  return (type.flags & 1048576) !== 0
 }
 
 /** Returns all types of a union type or an array containing `type` itself if it's no union type. */
@@ -11,7 +11,7 @@ export function unionTypeParts(type: Type): Type[] {
   return isUnionType(type) ? type.types : [type]
 }
 
-export function isTypeFlagSet(type: Type, flag: ts.TypeFlags): boolean {
+export function isTypeFlagSet(type: Type, flag: TypeFlags): boolean {
   return (type.flags & flag) !== 0
 }
 

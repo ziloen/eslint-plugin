@@ -14,17 +14,17 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@typescript-eslint/utils": "8.38.0",
-    "typescript": "^5.8.3"
+    "@typescript-eslint/utils": "8.50.0"
   },
   "devDependencies": {
     "@types/eslint": "^9.6.1",
     "@types/node": "^24.1.0",
-    "@typescript-eslint/parser": "8.38.0",
-    "bumpp": "^10.2.0",
-    "eslint": "^9.31.0",
-    "eslint-vitest-rule-tester": "^2.2.0",
-    "tsdown": "^0.13.0",
-    "vitest": "^3.2.4"
+    "@typescript-eslint/parser": "8.50.0",
+    "bumpp": "^10.3.2",
+    "eslint": "^9.39.2",
+    "eslint-vitest-rule-tester": "^3.0.1",
+    "tsdown": "^0.18.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
   }
 }
