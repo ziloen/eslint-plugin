@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "release": "npm run build && bumpp --commit --no-push && npm publish",
+    "release": "pnpm run build && bumpp --commit --no-push && pnpm publish",
     "test": "vitest"
   },
   "dependencies": {
