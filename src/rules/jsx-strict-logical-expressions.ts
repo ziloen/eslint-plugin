@@ -3,6 +3,7 @@
  */
 
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils'
+import { TypeFlags } from 'typescript'
 import { getConstrainedTypeAtLocation, isTypeFlagSet, unionTypeParts } from '../tsutils'
 import { createEslintRule } from '../utils'
 
@@ -61,9 +62,9 @@ const jsxStrictLogicalExpressions = createEslintRule<Options, MessageIds>({
       )
 
       const hasPotentiallyFalseyString = types.some(
-        // 402653316: TypeFlags.StringLike
+        // 12583968: TypeFlags.StringLike
         type =>
-          isTypeFlagSet(type, 402653316) &&
+          isTypeFlagSet(type, TypeFlags.StringLike) &&
           (!type.isStringLiteral() || type.value === '')
       )
 
@@ -72,12 +73,12 @@ const jsxStrictLogicalExpressions = createEslintRule<Options, MessageIds>({
       }
 
       const hasPotentiallyFalseyNumber = types.some(
-        // 296: TypeFlags.NumberLike
-        // 2112: TypeFlags.BigIntLike
+        // 67648: TypeFlags.NumberLike
+        // 4224: TypeFlags.BigIntLike
         type =>
           isTypeFlagSet(
             type,
-            296 | 2112
+            TypeFlags.NumberLike | TypeFlags.BigIntLike
           ) &&
           (!type.isNumberLiteral() || type.value === 0)
       )
