@@ -1,4 +1,4 @@
-import { defineConfig } from "tsdown"
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
   entry: [
@@ -7,11 +7,13 @@ export default defineConfig({
   outDir: "dist",
   minify: false,
   dts: true,
+  deps: {
+    skipNodeModulesBundle: true,
+  },
   format: ["esm"],
   platform: "node",
   treeshake: true,
   fixedExtension: false,
-  skipNodeModulesBundle: true,
   sourcemap: false,
   clean: true,
 })
