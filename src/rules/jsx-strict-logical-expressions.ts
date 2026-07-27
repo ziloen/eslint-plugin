@@ -1,36 +1,51 @@
 /**
  * https://github.com/hluisson/eslint-plugin-jsx-expressions
  */
+import { getConstrainedTypeAtLocation } from '@typescript-eslint/type-utils'
+import type { TSESTree } from '@typescript-eslint/utils'
+import {
+    ASTUtils,
+    AST_NODE_TYPES,
+    ESLintUtils,
+} from '@typescript-eslint/utils'
 
-import { ESLintUtils, TSESTree } from '@typescript-eslint/utils'
-import { TypeFlags } from 'typescript'
-import { getConstrainedTypeAtLocation, isTypeFlagSet, unionTypeParts } from '../tsutils'
 import { createEslintRule } from '../utils'
 
 type Options = [
   {
     allowString?: boolean
     allowNumber?: boolean
-  }
+  },
 ]
 
-type MessageIds = 'conditionErrorFalseyString' | 'conditionErrorFalseyNumber'
+const messages = {
+  conditionErrorFalseyString:
+    'Potentially falsy string in logical AND expression. Please use a boolean.',
+  conditionErrorFalseyNumber:
+    'Potentially falsy number or bigint in logical AND expression. Please use a boolean.',
+}
+
+type MessageIds = keyof typeof messages
 
 export const RULE_NAME = 'jsx-strict-logical-expressions'
 
-//------------------------------------------------------------------------------
-// Rule Definition
-//------------------------------------------------------------------------------
-
-const jsxStrictLogicalExpressions = createEslintRule<Options, MessageIds>({
+const jsxStrictLogicalExpressions = createEslintRule<
+  Options,
+  MessageIds
+>({
   name: RULE_NAME,
+
   defaultOptions: [{ allowString: false, allowNumber: false }],
+
   meta: {
-    docs: {
-      description: 'Forbid non-boolean falsey values in inline expressions',
-    },
-    fixable: 'code',
     type: 'problem',
+    fixable: 'code',
+
+    docs: {
+      description:
+        'Forbid non-boolean falsy values in JSX logical AND expressions',
+    },
+
     schema: [
       {
         type: 'object',
@@ -41,119 +56,236 @@ const jsxStrictLogicalExpressions = createEslintRule<Options, MessageIds>({
         additionalProperties: false,
       },
     ],
-    messages: {
-      conditionErrorFalseyString:
-        'Potentially falsey string in logical AND expression. Please use boolean.',
-      conditionErrorFalseyNumber:
-        'Potentially falsey number in logical AND expression. Please use boolean.',
-    },
+
+    messages,
   },
 
-  create(context, [options]) {
-    const parserServices = ESLintUtils.getParserServices(context)
-    const typeChecker = parserServices.program.getTypeChecker()
+  create(
+    context,
+    [
+      {
+        allowString = false,
+        allowNumber = false,
+      },
+    ],
+  ) {
+    const services = ESLintUtils.getParserServices(context)
+    const checker = services.program.getTypeChecker()
 
-    function checkIdentifier(
-      node: TSESTree.Identifier
+    const stringType = checker.getStringType()
+    const numberType = checker.getNumberType()
+    const bigintType = checker.getBigIntType()
+
+    /**
+     * Returns true when `value` is TypeScript's internal representation
+     * of a non-zero bigint literal.
+     */
+    function isNonZeroBigIntLiteralValue(
+      value: unknown,
+    ): boolean {
+      return (
+        typeof value === 'object' &&
+        value !== null &&
+        'base10Value' in value &&
+        typeof value.base10Value === 'string' &&
+        value.base10Value !== '0'
+      )
+    }
+
+    /**
+     * Determines which diagnostic, if any, applies to a condition.
+     */
+    function getConditionError(
+      node: TSESTree.Expression,
     ): MessageIds | undefined {
-      const tsNode = parserServices.esTreeNodeToTSNodeMap.get(node)
-      const types = unionTypeParts(
-        getConstrainedTypeAtLocation(typeChecker, tsNode)
+      const type = getConstrainedTypeAtLocation(
+        services,
+        node,
       )
 
-      const hasPotentiallyFalseyString = types.some(
-        // 12583968: TypeFlags.StringLike
-        type =>
-          isTypeFlagSet(type, TypeFlags.StringLike) &&
-          (!type.isStringLiteral() || type.value === '')
-      )
+      const typeParts = type.isUnion()
+        ? type.types
+        : [type]
 
-      if (!options.allowString && hasPotentiallyFalseyString) {
+      let hasPotentiallyFalsyString = false
+      let hasPotentiallyFalsyNumber = false
+
+      for (const typePart of typeParts) {
+        /*
+         * Literal types can be checked precisely.
+         *
+         * '' is falsy, but 'value' is always truthy.
+         */
+        if (typePart.isStringLiteral()) {
+          hasPotentiallyFalsyString ||= typePart.value === ''
+          continue
+        }
+
+        /*
+         * 0 and -0 are falsy, but other number literals
+         * are always truthy.
+         */
+        if (typePart.isNumberLiteral()) {
+          hasPotentiallyFalsyNumber ||= typePart.value === 0
+          continue
+        }
+
+        const baseType =
+          checker.getBaseTypeOfLiteralType(typePart)
+
+        /*
+         * Broad string-like types may contain ''.
+         *
+         * This also conservatively handles template-literal
+         * and string-mapping types that reduce to string.
+         */
+        if (baseType === stringType) {
+          hasPotentiallyFalsyString = true
+          continue
+        }
+
+        /*
+         * Broad number types may contain 0 or NaN.
+         */
+        if (baseType === numberType) {
+          hasPotentiallyFalsyNumber = true
+          continue
+        }
+
+        /*
+         * Broad bigint may contain 0n.
+         *
+         * Bigint literal values use TypeScript's PseudoBigInt
+         * representation instead of JavaScript's native bigint.
+         */
+        if (baseType === bigintType) {
+          const value =
+            'value' in typePart
+              ? typePart.value
+              : undefined
+
+          hasPotentiallyFalsyNumber ||=
+            !isNonZeroBigIntLiteralValue(value)
+        }
+      }
+
+      if (
+        !allowString &&
+        hasPotentiallyFalsyString
+      ) {
         return 'conditionErrorFalseyString'
       }
 
-      const hasPotentiallyFalseyNumber = types.some(
-        // 67648: TypeFlags.NumberLike
-        // 4224: TypeFlags.BigIntLike
-        type =>
-          isTypeFlagSet(
-            type,
-            TypeFlags.NumberLike | TypeFlags.BigIntLike
-          ) &&
-          (!type.isNumberLiteral() || type.value === 0)
-      )
-
-      if (!options.allowNumber && hasPotentiallyFalseyNumber) {
+      if (
+        !allowNumber &&
+        hasPotentiallyFalsyNumber
+      ) {
         return 'conditionErrorFalseyNumber'
       }
 
-      return
+      return undefined
     }
 
-    function checkAndReportIdentifier(
-      node: TSESTree.Identifier,
-      fixNode: TSESTree.Expression
-    ) {
-      const errorId = checkIdentifier(node)
-      if (errorId) {
-        context.report({
-          node,
-          messageId: errorId,
-          fix: fixer => fixer.insertTextBefore(fixNode, '!!'),
-        })
-      }
-    }
-
-    // Return the core identifier or expression
-    function determineNode(originalNode: TSESTree.Expression) {
-      let nodeToEvaluate = originalNode
-      if (nodeToEvaluate.type === TSESTree.AST_NODE_TYPES.ChainExpression) {
-        nodeToEvaluate = nodeToEvaluate.expression
-      }
-
+    /**
+     * Flattens:
+     *
+     *     a && b && <Component />
+     *
+     * into:
+     *
+     *     [a, b, <Component />]
+     *
+     * Every operand except the final one acts as a condition.
+     */
+    function collectAndOperands(
+      node: TSESTree.Expression,
+      operands: TSESTree.Expression[] = [],
+    ): TSESTree.Expression[] {
       if (
-        nodeToEvaluate.type === TSESTree.AST_NODE_TYPES.MemberExpression &&
-        nodeToEvaluate.property.type !==
-        TSESTree.AST_NODE_TYPES.PrivateIdentifier
+        node.type === AST_NODE_TYPES.LogicalExpression &&
+        node.operator === '&&'
       ) {
-        nodeToEvaluate = nodeToEvaluate.property
+        collectAndOperands(node.left, operands)
+        collectAndOperands(node.right, operands)
+      } else {
+        operands.push(node)
       }
 
-      return nodeToEvaluate
+      return operands
     }
 
-    function checkLogicalExpression(
-      expressionNode: TSESTree.LogicalExpression,
-      checkRightNode: boolean
-    ) {
-      const leftNode = determineNode(expressionNode.left)
+    function reportCondition(
+      node: TSESTree.Expression,
+    ): void {
+      const messageId = getConditionError(node)
 
-      if (leftNode.type === TSESTree.AST_NODE_TYPES.LogicalExpression) {
-        checkLogicalExpression(leftNode, true)
-      } else if (leftNode.type === TSESTree.AST_NODE_TYPES.Identifier) {
-        checkAndReportIdentifier(leftNode, expressionNode.left)
+      if (!messageId) {
+        return
       }
 
-      if (checkRightNode) {
-        const rightNode = determineNode(expressionNode.right)
+      context.report({
+        node,
+        messageId,
 
-        if (rightNode.type === TSESTree.AST_NODE_TYPES.Identifier) {
-          checkAndReportIdentifier(rightNode, expressionNode.right)
-        }
-      }
-    }
+        fix: fixer => {
+          const canPrefixDirectly =
+            node.type === AST_NODE_TYPES.Identifier ||
+            node.type === AST_NODE_TYPES.Literal ||
+            node.type === AST_NODE_TYPES.MemberExpression ||
+            node.type === AST_NODE_TYPES.CallExpression ||
+            node.type === AST_NODE_TYPES.ChainExpression
 
-    function checkJSXExpression(node: TSESTree.JSXExpressionContainer) {
-      if (
-        node.expression.type === TSESTree.AST_NODE_TYPES.LogicalExpression &&
-        node.expression.operator === '&&'
-      ) {
-        checkLogicalExpression(node.expression, false)
-      }
+          if (canPrefixDirectly) {
+            return fixer.insertTextBefore(node, '!!')
+          }
+
+          if (
+            ASTUtils.isParenthesized(
+              node,
+              context.sourceCode,
+            )
+          ) {
+            const openingParen =
+              context.sourceCode.getTokenBefore(node)
+
+            if (openingParen?.value === '(') {
+              return fixer.insertTextBefore(openingParen, '!!')
+            }
+          }
+
+          return [
+            fixer.insertTextBefore(node, '!!('),
+            fixer.insertTextAfter(node, ')'),
+          ]
+        },
+      })
     }
 
     return {
-      JSXExpressionContainer: checkJSXExpression,
+      JSXExpressionContainer(
+        node: TSESTree.JSXExpressionContainer,
+      ): void {
+        const expression = node.expression
+
+        if (
+          expression.type !==
+          AST_NODE_TYPES.LogicalExpression ||
+          expression.operator !== '&&'
+        ) {
+          return
+        }
+
+        const operands = collectAndOperands(expression)
+
+        // The last operand is the rendered result, not a condition.
+        for (
+          let index = 0;
+          index < operands.length - 1;
+          index += 1
+        ) {
+          reportCondition(operands[index])
+        }
+      },
     }
   },
 })
